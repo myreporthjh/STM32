@@ -194,7 +194,7 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
-  HAL_SYSTICK_Handler();  // ADD_SIKWON_231006
+  HAL_SYSTICK_Handler();	// ADD_JONGHYUN_231006
   /* USER CODE END SysTick_IRQn 1 */
 }
 

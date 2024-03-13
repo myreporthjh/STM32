@@ -65,8 +65,8 @@ UART_HandleTypeDef huart6;
 PCD_HandleTypeDef hpcd_USB_OTG_FS;
 
 /* USER CODE BEGIN PV */
-uint8_t rx_data;   // uart3 rx data
-uint8_t bt_rx_data;   // uart6 bt rx data
+uint8_t rx_data;	// uart3 rx data
+uint8_t bt_rx_data;	// uart6 bt rx data
 volatile int TIM10_10ms_counter=0;
 volatile int TIM10_10ms_ultrasonic=0;
 /* USER CODE END PV */
@@ -81,11 +81,11 @@ static void MX_USART6_UART_Init(void);
 static void MX_TIM10_Init(void);
 static void MX_TIM11_Init(void);
 static void MX_TIM3_Init(void);
+static void MX_I2C1_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_RTC_Init(void);
 static void MX_TIM5_Init(void);
-static void MX_I2C1_Init(void);
 /* USER CODE BEGIN PFP */
 extern void led_main(void);
 extern void pc_command_processing(void);
@@ -101,24 +101,40 @@ extern void move_cursor(uint8_t row, uint8_t column);
 extern void dcmotor_pwm_control(void);
 extern void servo_motor_test_main(void);
 extern void get_rtc(void);
-extern void lcd_display_mode_select(void);
+extern void washing_machine_on_off(void);
 extern void set_time_button_ui(void);
-extern void buzzer_main();
-extern int dotmatrix_main_test(void);
+extern void buzzer_main(void);
+extern void fnd4digit_main(void);
+extern void fnd4digit_sec_clock(void);
+extern void laundry_btn_event(void);	// button event
+extern void washing_machine_run(void); 	// run washing machine
+extern void timer_main_ui();
 
 void delay_us(unsigned long us);
+
+extern uint8_t on_off_flag; // on/off flag
+extern int toggle_DHT;
+extern int toggle_sonic;
+
+//extern uint8_t lcd_display_mode_flag;
+extern uint8_t on_off_flag;
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-//---------------
+//-------------------
 // call by SysTick_Handler of stm32f4xx_it.c
 // ARM default timer
 // enter here every 1ms
-volatile int t1ms_counter=0;  // volatile : for disable optimize
+volatile int t1ms_counter = 0; 	// volatile : for disable optimize
+volatile int fnd1ms_counter = 0;// FND 1ms
+volatile int t1ms_wm_cnt = 0; 	// washing machine counter
 void HAL_SYSTICK_Handler(void)
 {
-	t1ms_counter++;   // 1ms timer
+	t1ms_counter++;	// 1ms timer
+	fnd1ms_counter++;
+	t1ms_wm_cnt++;
 }
 //----------  printf start ----------
 #ifdef __GNUC__
@@ -145,21 +161,19 @@ PUTCHAR_PROTOTYPE   // Add for printf
 
 // move from Driver/STM32F4xx_HAL_Driver/stm32f4xx_hal_tim.c to here
 // enter here when every timer INT occurs
-
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	if (htim->Instance == TIM10)
+	if(htim->Instance == TIM10)
 	{
-		TIM10_10ms_counter++;  // 10ms timer counter
-		TIM10_10ms_ultrasonic++;  // ultrasonic trigger timer
+		TIM10_10ms_counter++; // 10ms timer counter
+		TIM10_10ms_ultrasonic++; // ultrasonic trigger timer
 	}
 }
 
 void delay_us(unsigned long us)
 {
-	__HAL_TIM_SET_COUNTER(&htim11,0);   // tim11 clear
-	while(__HAL_TIM_GET_COUNTER(&htim11) < us)
-		;
+	__HAL_TIM_SET_COUNTER(&htim11, 0); // tim11 clear
+	while(__HAL_TIM_GET_COUNTER(&htim11) < us);
 }
 /* USER CODE END 0 */
 
@@ -198,50 +212,48 @@ int main(void)
   MX_TIM10_Init();
   MX_TIM11_Init();
   MX_TIM3_Init();
+  MX_I2C1_Init();
   MX_TIM4_Init();
   MX_TIM2_Init();
   MX_RTC_Init();
   MX_TIM5_Init();
-  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
-  HAL_UART_Receive_IT(&huart3, &rx_data, 1);   // assing to RX INT
-  HAL_UART_Receive_IT(&huart6, &bt_rx_data, 1);   // for BT assing to RX INT
-  HAL_TIM_Base_Start_IT(&htim10);   // ADD_SIKWON_1011
-  HAL_TIM_Base_Start_IT(&htim11);   // ADD_SIKWON_1011
-  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_1);   // for count pulse(rising edge & falling edge)
-  HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_1);  // for DC motor PWM control
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);   // for SERVO motor PWM control
-  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4);   // PIEZO Buzzer
+  HAL_UART_Receive_IT(&huart3, &rx_data, 1); // assing to RX INT
+  HAL_UART_Receive_IT(&huart6, &bt_rx_data, 1); // for BT assing to RX INT
+  HAL_TIM_Base_Start_IT(&htim10);	// ADD_JONGHYUN_231011
+  HAL_TIM_Base_Start_IT(&htim11);	// ADD_JONGHYUN_231011
+  HAL_TIM_IC_Start_IT(&htim3, TIM_CHANNEL_1); // for count pulse(rising edge, & falling edge)
+  HAL_TIM_PWM_Start_IT(&htim4, TIM_CHANNEL_1); // for DV motor PWM control
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1); /// for SERVO motor PWM control
+  HAL_TIM_PWM_Start(&htim5, TIM_CHANNEL_4); /// PIEZO Buzzer
 
-//  DHT11_Init();
-//  i2c_lcd_init();
 
-  TIM10_10ms_counter=0;
+	DHT11_Init();
+	i2c_lcd_init();
 
-  dotmatrix_main_test();
-//  led_main();
-//  DHT11_main();
-//  i2c_lcd_main();
-//  servo_motor_test_main();
-//    buzzer_main();
+	TIM10_10ms_counter=0;
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
-//	DHT11_processing();
-// 	pc_command_processing();
-// 	bt_command_processing();
-// 	ultrasonic_processing();
-// 	dcmotor_pwm_control();
-// 	get_rtc();
-// 	lcd_display_mode_select();
-// 	set_time_button_ui();
+	  washing_machine_on_off();	// button lcd button display control
+	  if(on_off_flag) // ON?��?���? ?��?��
+	  {
+		  laundry_btn_event(); // button 0 1 2 3 event
+		  washing_machine_run();
+	  }
+	  fnd4digit_sec_clock();
+
+	  //set_time_button_ui();	// countdown button
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+
   }
   /* USER CODE END 3 */
 }
@@ -646,6 +658,10 @@ static void MX_TIM5_Init(void)
   {
     Error_Handler();
   }
+  if (HAL_TIM_OnePulse_Init(&htim5, TIM_OPMODE_SINGLE) != HAL_OK)
+  {
+    Error_Handler();
+  }
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
   if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
@@ -842,43 +858,38 @@ static void MX_GPIO_Init(void)
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOG_CLK_ENABLE();
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, COL1_Pin|COL2_Pin|COL3_Pin|COL4_Pin
-                          |COL5_Pin|COL6_Pin|COL7_Pin|COL8_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(DHT11_GPIO_Port, DHT11_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LD1_Pin|LD3_Pin|LD2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LD1_Pin|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10
+                          |GPIO_PIN_11|LD3_Pin|GPIO_PIN_3|GPIO_PIN_4
+                          |GPIO_PIN_5|GPIO_PIN_6|LD2_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(ULTRASONIC_TRIGGER_GPIO_Port, ULTRASONIC_TRIGGER_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, IN1_DCMOTOR_Pin|IN2_DCMOTOR_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(USB_PowerSwitchOn_GPIO_Port, USB_PowerSwitchOn_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOD, ROW1_Pin|ROW2_Pin|ROW3_Pin|ROW4_Pin
-                          |ROW5_Pin|ROW6_Pin|ROW7_Pin|ROW8_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : COL1_Pin COL2_Pin COL3_Pin COL4_Pin
-                           COL5_Pin COL6_Pin COL7_Pin COL8_Pin */
-  GPIO_InitStruct.Pin = COL1_Pin|COL2_Pin|COL3_Pin|COL4_Pin
-                          |COL5_Pin|COL6_Pin|COL7_Pin|COL8_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : USER_Btn_Pin */
   GPIO_InitStruct.Pin = USER_Btn_Pin;
@@ -893,8 +904,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(DHT11_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : LD1_Pin LD3_Pin LD2_Pin */
-  GPIO_InitStruct.Pin = LD1_Pin|LD3_Pin|LD2_Pin;
+  /*Configure GPIO pins : LD1_Pin PB1 PB2 PB10
+                           PB11 LD3_Pin PB3 PB4
+                           PB5 PB6 LD2_Pin */
+  GPIO_InitStruct.Pin = LD1_Pin|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_10
+                          |GPIO_PIN_11|LD3_Pin|GPIO_PIN_3|GPIO_PIN_4
+                          |GPIO_PIN_5|GPIO_PIN_6|LD2_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -906,6 +921,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(ULTRASONIC_TRIGGER_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : IN1_DCMOTOR_Pin IN2_DCMOTOR_Pin */
+  GPIO_InitStruct.Pin = IN1_DCMOTOR_Pin|IN2_DCMOTOR_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : BUTTON3_Pin BUTTON2_Pin BUTTON1_Pin BUTTON0_Pin */
   GPIO_InitStruct.Pin = BUTTON3_Pin|BUTTON2_Pin|BUTTON1_Pin|BUTTON0_Pin;
@@ -926,10 +948,17 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(USB_OverCurrent_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : ROW1_Pin ROW2_Pin ROW3_Pin ROW4_Pin
-                           ROW5_Pin ROW6_Pin ROW7_Pin ROW8_Pin */
-  GPIO_InitStruct.Pin = ROW1_Pin|ROW2_Pin|ROW3_Pin|ROW4_Pin
-                          |ROW5_Pin|ROW6_Pin|ROW7_Pin|ROW8_Pin;
+  /*Configure GPIO pins : PC8 PC9 PC10 PC11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PD0 PD1 PD2 PD3
+                           PD4 PD5 PD6 PD7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3
+                          |GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;

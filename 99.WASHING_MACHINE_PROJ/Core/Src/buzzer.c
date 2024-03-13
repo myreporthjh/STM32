@@ -1,5 +1,6 @@
 #include "main.h"
-
+void buzzer_main(void);
+void playSong(void);
 /*************************************************************************************************************
 
 	옥타브 및 음계별 주파수표(단위:Hz)
@@ -55,7 +56,6 @@ STM32에서 주파수를 만들 때 3개의 레지스터를 설정한다.
  CCRx = 199
  */
 extern TIM_HandleTypeDef htim5;
-void buzzer_main();
 
 enum notes
 {
@@ -70,7 +70,7 @@ enum notes
 };
 
 
-// 학교종이 땡땡땡
+// 학교종이 떙떙땡
 unsigned int school_bell[] =
 {
 	G4,G4,A4,A4,G4,G4,E4,G4,G4,E4,E4,D4,
@@ -176,7 +176,7 @@ unsigned int duration[] = {1,1,2,2,2,2,1,1,2,2,2,2,1,1,2,2,2,2,2,1,1,2,2,2,2};
 
 void noTone()
 {
-    htim3.Instance->CCR1=0;
+    htim5.Instance->CCR1=0;
     HAL_Delay(50);
 }
 
@@ -186,8 +186,8 @@ void playSong()
     for (int i = 0 ; i < 24; i++)
     {
 		Frequency = CLOCK/A[i];
-		htim3.Instance->ARR=Frequency;
-		htim3.Instance->CCR1=Frequency/2;  // OK
+		htim5.Instance->ARR=Frequency;
+		htim5.Instance->CCR1=Frequency/2;  // OK
 		HAL_Delay(400*duration[i]);
 		noTone();
     }
@@ -197,8 +197,8 @@ void playSong()
     for (i = 0; i <25; i++)
     {
 		Frequency = CLOCK/notes[i];
-		htim3.Instance->ARR=Frequency;
-		htim3.Instance->CCR1=Frequency/2;  // OK
+		htim5.Instance->ARR=Frequency;
+		htim5.Instance->CCR1=Frequency/2;  // OK
 		HAL_Delay(400*duration[i]);
 		noTone();
     }

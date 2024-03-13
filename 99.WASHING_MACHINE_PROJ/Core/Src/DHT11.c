@@ -17,10 +17,13 @@ void DHT11_main(void);
 void DHT11_Init(void);
 void DHT11_processing(void);
 
+int toggle_DHT=1;
+
 void DHT11_main(void)
 {
 	uint8_t i_RH, d_RH, i_Tmp, d_Tmp;
-	
+
+	// HAL_TIM_Base_Start_IT(&htim2);
 	DHT11_Init();
 	
 printf("DHT11_Init()\n");
@@ -47,21 +50,22 @@ printf("DHT11_Init()\n");
 	
 }
 
-int dht11time=150;
+int dht11time = 150;
 void DHT11_processing(void)
 {
 	uint8_t i_RH, d_RH, i_Tmp, d_Tmp;
 	char lcd_buff[20];
 
-	if (TIM10_10ms_counter >= dht11time)  //1500ms
+	if(TIM10_10ms_counter >= dht11time) // 1500ms
 	{
-		TIM10_10ms_counter=0;
+		TIM10_10ms_counter = 0;
 		DHT11_trriger();
 		DHT11_DataLine_Input();
 		DHT11_dumi_read();
-
+		// 온도정보
 		i_RH = DHT11_rx_Data();
 		d_RH = DHT11_rx_Data();
+		// 습도정보
 		i_Tmp = DHT11_rx_Data();
 		d_Tmp = DHT11_rx_Data();
 
@@ -69,8 +73,8 @@ void DHT11_processing(void)
 		HAL_GPIO_WritePin(DHT11_PORT, DHT11_DATA_RIN, GPIO_PIN_SET);
 		printf("[Tmp]%d\n",(int)i_Tmp);
 		printf("[Wet]%d\n",(int)i_RH);
-		sprintf(lcd_buff,"Tmp:%d Wet:%d", (int)i_Tmp,(int)i_RH);
-		if (lcd_display_mode_flag==1)
+		sprintf(lcd_buff, "Tmp: %d Wet: %d", (int)i_Tmp, (int)i_RH);
+		if(lcd_display_mode_flag==1)
 		{
 			move_cursor(0,0);
 			lcd_string(lcd_buff);

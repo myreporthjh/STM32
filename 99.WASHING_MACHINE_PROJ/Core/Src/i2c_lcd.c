@@ -20,16 +20,17 @@ void i2c_lcd_main(void)
 {
 
 	uint8_t value=0;
-	unsigned char i2c_test[] = {'5',0};
-#if 1   // I2C TEST
+	unsigned char i2c_test[] = {'5', 0};
+
+#if 1 // I2C TEST
 	while(1)
 	{
 		while(HAL_I2C_Master_Transmit(&hi2c1, I2C_LCD_ADDRESS,
-				i2c_test, 1, 100)!=HAL_OK){
+					i2c_test, 1, 100)!=HAL_OK){
+				//HAL_Delay(1);
 		}
 		HAL_Delay(200);
 	}
-
 #endif
 
  	i2c_lcd_init();

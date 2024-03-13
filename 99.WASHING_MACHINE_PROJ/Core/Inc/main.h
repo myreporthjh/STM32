@@ -59,16 +59,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define COL1_Pin GPIO_PIN_2
-#define COL1_GPIO_Port GPIOE
-#define COL2_Pin GPIO_PIN_3
-#define COL2_GPIO_Port GPIOE
-#define COL3_Pin GPIO_PIN_4
-#define COL3_GPIO_Port GPIOE
-#define COL4_Pin GPIO_PIN_5
-#define COL4_GPIO_Port GPIOE
-#define COL5_Pin GPIO_PIN_6
-#define COL5_GPIO_Port GPIOE
 #define USER_Btn_Pin GPIO_PIN_13
 #define USER_Btn_GPIO_Port GPIOC
 #define MCO_Pin GPIO_PIN_0
@@ -95,12 +85,10 @@ void Error_Handler(void);
 #define LD1_GPIO_Port GPIOB
 #define ULTRASONIC_TRIGGER_Pin GPIO_PIN_12
 #define ULTRASONIC_TRIGGER_GPIO_Port GPIOF
-#define COL6_Pin GPIO_PIN_7
-#define COL6_GPIO_Port GPIOE
-#define COL7_Pin GPIO_PIN_8
-#define COL7_GPIO_Port GPIOE
-#define COL8_Pin GPIO_PIN_9
-#define COL8_GPIO_Port GPIOE
+#define IN1_DCMOTOR_Pin GPIO_PIN_8
+#define IN1_DCMOTOR_GPIO_Port GPIOE
+#define IN2_DCMOTOR_Pin GPIO_PIN_9
+#define IN2_DCMOTOR_GPIO_Port GPIOE
 #define BUTTON3_Pin GPIO_PIN_10
 #define BUTTON3_GPIO_Port GPIOE
 #define BUTTON2_Pin GPIO_PIN_12
@@ -135,22 +123,6 @@ void Error_Handler(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
-#define ROW1_Pin GPIO_PIN_0
-#define ROW1_GPIO_Port GPIOD
-#define ROW2_Pin GPIO_PIN_1
-#define ROW2_GPIO_Port GPIOD
-#define ROW3_Pin GPIO_PIN_2
-#define ROW3_GPIO_Port GPIOD
-#define ROW4_Pin GPIO_PIN_3
-#define ROW4_GPIO_Port GPIOD
-#define ROW5_Pin GPIO_PIN_4
-#define ROW5_GPIO_Port GPIOD
-#define ROW6_Pin GPIO_PIN_5
-#define ROW6_GPIO_Port GPIOD
-#define ROW7_Pin GPIO_PIN_6
-#define ROW7_GPIO_Port GPIOD
-#define ROW8_Pin GPIO_PIN_7
-#define ROW8_GPIO_Port GPIOD
 #define RMII_TX_EN_Pin GPIO_PIN_11
 #define RMII_TX_EN_GPIO_Port GPIOG
 #define RMII_TXD0_Pin GPIO_PIN_13
